@@ -1,0 +1,48 @@
+# DeepSeek Harness — Docker Compose orchestration.
+#
+# One-shot start:   docker compose up --build
+# Tear down (keep data):  docker compose down
+# Tear down (wipe data):  docker compose down -v
+#
+# Copy .env.example to .env and fill in DEEPSEEK_API_KEY before starting.
+# The service runs as root (user: "0") so the entrypoint can chown the named
+# volumes, then drops privileges to the unprivileged dsh user (UID 1001).
+
+services:
+  dsh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: "22"
+        PNPM_VERSION: "11.7.0"
+        INCLUDE_PYTHON: "false"
+        INCLUDE_WEB: "false"
+        IMAGE_TAG: "dev"
+        DSH_UID: "1001"
+    image: dsh:dev
+    # Start as root so the entrypoint can fix volume ownership, then it drops
+    # to the dsh user via gosu. Change to "1001" only if volumes are pre-chowned.
+    user: "0"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Reference without hardcoding; .env supplies the real value.
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-}
+    volumes:
+      - dsh-sessions:/app/.sessions
+      - dsh-storages:/app/.storages
+      # Optional: mount a custom cordis.yml profile (read-only).
+      # - ./cordis.yml:/app/cordis.yml:ro
+    # Web UI port — uncomment when INCLUDE_WEB=true.
+    # ports:
+    #   - "${WEB_PORT:-3000}:3000"
+    # Security: never enable privileged or mount the Docker socket.
+    privileged: false
+    # read_only: true would break volume writes; left as default.
+
+volumes:
+  dsh-sessions:
+  dsh-storages:

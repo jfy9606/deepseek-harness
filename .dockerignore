@@ -1,0 +1,86 @@
+# Build artifacts — regenerated inside the image, never copy host state.
+node_modules/
+lib/
+types/
+*.tsbuildinfo
+coverage/
+apps/web/dist/
+dist-exe/
+.artifacts/
+
+# Python build artifacts.
+python/sdk-runtime/src/deepseek_harness_runtime/runtime/dsh-jsonrpc-agent-*
+python/sdk-runtime/src/deepseek_harness_runtime/runtime/node/
+python/**/__pycache__/
+python/**/.pytest_cache/
+
+# Local runtime state — must not bake into the image.
+.sessions/
+.storages/
+examples/*/.sessions/
+examples/*/*.jsonl
+
+# Secrets — never enter the build context.
+.env
+.env.*
+!.env.example
+
+# VCS / metadata.
+.git/
+.gitattributes
+CLAUDE.local.md
+
+# Editor / IDE / OS.
+.vscode/
+.idea/
+.DS_Store
+.claude/commands/
+.claude/launch.json
+.claude/settings.json
+
+# Caches / temp / tooling residue.
+.pnpm-store/
+.cache/
+tmp/
+.doc-typecheck-*/
+.node-next-types-*/
+.oxlint-contract-*/
+.oxlintrc.contract-*.json
+oxlint-contract-*.ts
+.humanize/
+.playwright-mcp/
+.typert-*/
+.worktrees/
+worktrees/
+.agents/worktrees/
+.orig
+mise.toml
+pnpm-debug.log
+
+# Documentation site — not needed to build the runtime image.
+docs/
+website/.vitepress/cache/
+website/.vitepress/dist/
+
+# Docker files themselves — not needed inside the image.
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker-compose*.yml
+.docker/
+
+# Explicitly keep build-critical paths (harmless re-assertions; guard
+# against future wildcard rules accidentally excluding them).
+!vendor/
+!packages/
+!native/
+!python/
+!apps/
+!website/
+!examples/
+!patches/
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!package.json
+!tsconfig*.json
+!tsdown.config.ts
