@@ -45,6 +45,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM base AS builder
 ARG INCLUDE_WEB
 WORKDIR /app
+# CI=true lets pnpm purge dev modules without an interactive TTY prompt.
+ENV CI=true
 COPY . ./
 RUN pnpm install --frozen-lockfile
 # Compile landlock native binaries (musl-gcc -static; native-only, Linux builder).
