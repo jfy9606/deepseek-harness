@@ -63,6 +63,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | 是 | DeepSeek API 密钥，运行时注入，禁止烘焙进镜像 |
 | `DEEPSEEK_BASE_URL` | 否 | API 端点覆盖（自建网关） |
+| `DSH_PROFILE` | 否 | 启动 profile 名（等价 `--profile <name>`），默认 `headless` |
 | `DSH_SESSIONS_DIR` | 否 | 会话目录，默认 `/app/.sessions` |
 | `DSH_STORAGES_DIR` | 否 | 存储目录，默认 `/app/.storages` |
 | `WEB_PORT` | 否 | Web UI 宿主端口（compose），默认 `3000` |
@@ -70,9 +71,10 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 ## 卷挂载
 
 | 容器路径 | 用途 |
-| --- | --- |
+| --- | --- | --- |
 | `/app/.sessions` | 会话持久化（命名卷 `dsh-sessions`） |
 | `/app/.storages` | 存储持久化（命名卷 `dsh-storages`） |
+| `/app/profiles` | 可选：profile 目录（挂载到 `$DSH_HOME/profiles/<name>`） |
 | `/app/cordis.yml` | 可选：自定义 profile 只读挂载 |
 
 ## 安全约束

@@ -14,6 +14,12 @@ STORAGES_DIR="${DSH_STORAGES_DIR:-$APP_DIR/.storages}"
 DSH_UID="${DSH_UID:-1001}"
 CLI_BIN="$APP_DIR/apps/cli/lib/bin.js"
 
+# When no launcher args are given, inject --profile from $DSH_PROFILE so the
+# container boots without an explicit command. Explicit args always override.
+if [ "$#" -eq 0 ] && [ -n "${DSH_PROFILE:-}" ]; then
+    set -- --profile "$DSH_PROFILE"
+fi
+
 ensure_dirs() {
     mkdir -p "$SESSIONS_DIR" "$STORAGES_DIR" 2>/dev/null || true
 }

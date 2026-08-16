@@ -63,6 +63,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | yes | DeepSeek API key; inject at runtime, never bake into the image |
 | `DEEPSEEK_BASE_URL` | no | API endpoint override (self-hosted gateway) |
+| `DSH_PROFILE` | no | Profile name to boot (equiv. `--profile <name>`), default `headless` |
 | `DSH_SESSIONS_DIR` | no | Sessions dir, default `/app/.sessions` |
 | `DSH_STORAGES_DIR` | no | Storages dir, default `/app/.storages` |
 | `WEB_PORT` | no | Web UI host port (compose), default `3000` |
@@ -73,6 +74,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | --- | --- |
 | `/app/.sessions` | Session persistence (named volume `dsh-sessions`) |
 | `/app/.storages` | Storage persistence (named volume `dsh-storages`) |
+| `/app/profiles` | Optional: profile dir (mount to `$DSH_HOME/profiles/<name>`) |
 | `/app/cordis.yml` | Optional: custom profile, read-only mount |
 
 ## Security constraints
