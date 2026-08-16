@@ -14,9 +14,11 @@ DeepSeek Harness ships a Docker image and a docker-compose orchestration for one
 
 ## Quick start
 
+Boots the Web UI (`web` profile) by default, listening on `http://localhost:3080`:
+
 ```sh
 cp .env.example .env          # fill in DEEPSEEK_API_KEY
-docker compose up --build     # build and start
+docker compose up --build     # build and start the Web UI
 docker compose down           # stop, keep volume data
 ```
 
@@ -26,8 +28,8 @@ docker compose down           # stop, keep volume data
 
 | Tag | INCLUDE_WEB | INCLUDE_PYTHON | Description |
 | --- | --- | --- | --- |
-| `dsh:<tag>` | false | false | Base runtime (default) |
-| `dsh:<tag>-web` | true | false | With web frontend assets |
+| `dsh:<tag>` | false | false | Base runtime |
+| `dsh:<tag>-web` | true | false | With web frontend assets (compose default) |
 | `dsh:<tag>-python` | false | true | With Python SDK runtime |
 | `dsh:<tag>-web-python` | true | true | Full variant |
 
@@ -44,7 +46,7 @@ docker build --build-arg INCLUDE_PYTHON=true -t dsh:dev-python .
 | `NODE_VERSION` | `22` | Node major; must satisfy `^22.19 \|\| >=24` |
 | `PNPM_VERSION` | `11.7.0` | Must match `package.json` packageManager |
 | `INCLUDE_PYTHON` | `false` | Bundle the Python SDK runtime |
-| `INCLUDE_WEB` | `false` | Bundle the web frontend `dist/` |
+| `INCLUDE_WEB` | `false` | Bundle the web frontend `dist/` (compose default `true`) |
 | `IMAGE_TAG` | `dev` | OCI image version label |
 | `DSH_UID` | `1001` | Non-root runtime user UID |
 | `GIT_SHA` | `unknown` | git short SHA for OCI labels |
@@ -63,10 +65,12 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | yes | DeepSeek API key; inject at runtime, never bake into the image |
 | `DEEPSEEK_BASE_URL` | no | API endpoint override (self-hosted gateway) |
-| `DSH_PROFILE` | no | Profile name to boot (equiv. `--profile <name>`), default `headless` |
+| `DSH_PROFILE` | no | Profile name to boot (equiv. `--profile <name>`), default `web` |
+| `DSH_WEB_HOST` | no | Web UI listen host (equiv. `--host`), default `0.0.0.0` |
+| `DSH_WEB_PORT` | no | Web UI listen port (equiv. `--port`), default `3080` |
 | `DSH_SESSIONS_DIR` | no | Sessions dir, default `/app/.sessions` |
 | `DSH_STORAGES_DIR` | no | Storages dir, default `/app/.storages` |
-| `WEB_PORT` | no | Web UI host port (compose), default `3000` |
+| `WEB_PORT` | no | Web UI host port (compose mapping), default `3080` |
 
 ## Volumes
 

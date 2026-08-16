@@ -16,8 +16,16 @@ CLI_BIN="$APP_DIR/apps/cli/lib/bin.js"
 
 # When no launcher args are given, inject --profile from $DSH_PROFILE so the
 # container boots without an explicit command. Explicit args always override.
+# DSH_WEB_HOST / DSH_WEB_PORT append the web app's --host / --port flags so
+# the UI listens on all interfaces inside a container (default 127.0.0.1).
 if [ "$#" -eq 0 ] && [ -n "${DSH_PROFILE:-}" ]; then
     set -- --profile "$DSH_PROFILE"
+    if [ -n "${DSH_WEB_HOST:-}" ]; then
+        set -- "$@" --host "$DSH_WEB_HOST"
+    fi
+    if [ -n "${DSH_WEB_PORT:-}" ]; then
+        set -- "$@" --port "$DSH_WEB_PORT"
+    fi
 fi
 
 ensure_dirs() {

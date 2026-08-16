@@ -14,9 +14,11 @@ DeepSeek Harness 提供 Docker 镜像与 docker-compose 编排，支持一键构
 
 ## 快速开始
 
+默认启动 Web UI（`web` profile），监听 `http://localhost:3080`：
+
 ```sh
 cp .env.example .env          # 填入 DEEPSEEK_API_KEY
-docker compose up --build     # 构建并启动
+docker compose up --build     # 构建并启动 Web UI
 docker compose down           # 停止并保留卷数据
 ```
 
@@ -26,8 +28,8 @@ docker compose down           # 停止并保留卷数据
 
 | 变体标签 | INCLUDE_WEB | INCLUDE_PYTHON | 说明 |
 | --- | --- | --- | --- |
-| `dsh:<tag>` | false | false | 基础运行时（默认） |
-| `dsh:<tag>-web` | true | false | 含 Web 前端静态资源 |
+| `dsh:<tag>` | false | false | 基础运行时 |
+| `dsh:<tag>-web` | true | false | 含 Web 前端静态资源（compose 默认） |
 | `dsh:<tag>-python` | false | true | 含 Python SDK 运行时 |
 | `dsh:<tag>-web-python` | true | true | 全量变体 |
 
@@ -44,7 +46,7 @@ docker build --build-arg INCLUDE_PYTHON=true -t dsh:dev-python .
 | `NODE_VERSION` | `22` | Node 主版本，须满足 `^22.19 \|\| >=24` |
 | `PNPM_VERSION` | `11.7.0` | 须与 `package.json` 的 `packageManager` 一致 |
 | `INCLUDE_PYTHON` | `false` | 是否打包 Python SDK 运行时 |
-| `INCLUDE_WEB` | `false` | 是否打包 Web 前端 `dist/` |
+| `INCLUDE_WEB` | `false` | 是否打包 Web 前端 `dist/`（compose 默认 `true`） |
 | `IMAGE_TAG` | `dev` | OCI 镜像版本标签 |
 | `DSH_UID` | `1001` | 运行时非 root 用户 UID |
 | `GIT_SHA` | `unknown` | git short SHA，写入 OCI labels |
@@ -63,10 +65,12 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | 是 | DeepSeek API 密钥，运行时注入，禁止烘焙进镜像 |
 | `DEEPSEEK_BASE_URL` | 否 | API 端点覆盖（自建网关） |
-| `DSH_PROFILE` | 否 | 启动 profile 名（等价 `--profile <name>`），默认 `headless` |
+| `DSH_PROFILE` | 否 | 启动 profile 名（等价 `--profile <name>`），默认 `web` |
+| `DSH_WEB_HOST` | 否 | Web UI 监听地址（等价 `--host`），默认 `0.0.0.0` |
+| `DSH_WEB_PORT` | 否 | Web UI 监听端口（等价 `--port`），默认 `3080` |
 | `DSH_SESSIONS_DIR` | 否 | 会话目录，默认 `/app/.sessions` |
 | `DSH_STORAGES_DIR` | 否 | 存储目录，默认 `/app/.storages` |
-| `WEB_PORT` | 否 | Web UI 宿主端口（compose），默认 `3000` |
+| `WEB_PORT` | 否 | Web UI 宿主端口（compose 映射），默认 `3080` |
 
 ## 卷挂载
 

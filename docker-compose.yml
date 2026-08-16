@@ -17,7 +17,7 @@ services:
         NODE_VERSION: "22"
         PNPM_VERSION: "11.7.0"
         INCLUDE_PYTHON: "false"
-        INCLUDE_WEB: "false"
+        INCLUDE_WEB: "true"
         IMAGE_TAG: "dev"
         DSH_UID: "1001"
     image: dsh:dev
@@ -32,15 +32,16 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-}
       # Profile to boot when no command is given (see: dsh --profile <name>).
-      DSH_PROFILE: ${DSH_PROFILE:-headless}
+      DSH_PROFILE: ${DSH_PROFILE:-web}
+      # Listen on all interfaces so the UI is reachable outside the container.
+      DSH_WEB_HOST: ${DSH_WEB_HOST:-0.0.0.0}
     volumes:
       - dsh-sessions:/app/.sessions
       - dsh-storages:/app/.storages
       # Optional: mount a prepared profile dir under $DSH_HOME/profiles/<name>.
       # - ./profiles:/app/profiles:ro
-    # Web UI port — uncomment when INCLUDE_WEB=true.
-    # ports:
-    #   - "${WEB_PORT:-3000}:3000"
+    ports:
+      - "${WEB_PORT:-3080}:3080"
     # Security: never enable privileged or mount the Docker socket.
     privileged: false
     # read_only: true would break volume writes; left as default.
