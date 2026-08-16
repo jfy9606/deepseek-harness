@@ -53,9 +53,11 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @deepseek-ai/node-addon-landlock-run-workspace run build:native
 # Build lib/ (host+client), types/, and web dist/ via the existing pipeline.
 RUN pnpm run build
-# pnpm has no `prune` subcommand; reinstall prod-only to drop devDependencies.
-# --ignore-scripts avoids re-running native builds already produced above.
-RUN pnpm install --prod --frozen-lockfile --ignore-scripts
+# NOTE: devDependencies are intentionally retained. @deepseek-ai/cordis and
+# every cordis-plugin-* are declared as peerDependencies (+ devDependencies)
+# by harness packages, so `pnpm install --prod` unlinks them and breaks
+# runtime resolution (ERR_MODULE_NOT_FOUND). Moving them to dependencies
+# would require editing every package.json — out of scope for this change.
 # Strip dev-only sources from the artifact plane; keep lib/, types/, node_modules.
 RUN find /app -type d \( -name src -o -name tests -o -name test -o -name __tests__ \) \
         -not -path '*/node_modules/*' -prune -exec rm -rf {} + \
