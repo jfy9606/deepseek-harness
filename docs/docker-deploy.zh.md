@@ -25,6 +25,8 @@ docker compose down           # 停止并保留卷数据
 
 允许 CIDR 内任意机器通过 `http://<宿主机IP>:3080` 访问 UI。
 
+> `crypto.randomUUID` 仅在浏览器安全上下文（HTTPS 或 localhost）可用。局域网通过明文 HTTP 访问时，nginx 通过 `sub_filter` 向 HTML 注入基于 `crypto.getRandomValues` 的 `crypto.randomUUID` polyfill，无需 HTTPS 证书即可正常使用。
+
 > 如需限制为其他局域网，在 `.env` 中设置 `DSH_ALLOW_CIDR=10.0.0.0/8`（或你的 CIDR）。如需禁用 nginx、仅允许宿主机回环访问，设置 `DSH_ALLOW_CIDR=`（留空）并将 `docker-compose.yml` 改为 `network_mode: host`。
 
 ## 构建变体

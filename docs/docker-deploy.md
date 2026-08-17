@@ -25,6 +25,8 @@ docker compose down           # stop, keep volume data
 
 The UI is reachable at `http://<host-ip>:3080` from any machine in the allowed CIDR.
 
+> `crypto.randomUUID` is only available in browser secure contexts (HTTPS or localhost). Since LAN access uses plain HTTP, nginx injects a `crypto.randomUUID` polyfill (backed by `crypto.getRandomValues`) into the served HTML via `sub_filter`, so the UI works without HTTPS certificates.
+
 > To restrict access to a different LAN, set `DSH_ALLOW_CIDR=10.0.0.0/8` (or your CIDR) in `.env`. To disable nginx and expose loopback-only on the host, set `DSH_ALLOW_CIDR=` (empty) and switch `docker-compose.yml` to `network_mode: host`.
 
 ## Build variants

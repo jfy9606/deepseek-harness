@@ -46,7 +46,11 @@ FROM base AS builder
 ARG INCLUDE_WEB
 WORKDIR /app
 # CI=true lets pnpm purge dev modules without an interactive TTY prompt.
-ENV CI=true
+# Raise fetch timeout/retries so pnpm install survives slow registry hops
+# (default fetch-timeout 60s, fetch-retries 2 is too tight for CI networks).
+ENV CI=true \
+    npm_config_fetch_timeout=300000 \
+    npm_config_fetch_retries=5
 COPY . ./
 RUN pnpm install --frozen-lockfile
 # Compile landlock native binaries (musl-gcc -static; native-only, Linux builder).
