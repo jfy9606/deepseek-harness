@@ -103,8 +103,9 @@ LABEL org.opencontainers.image.title="DeepSeek Harness" \
       org.opencontainers.image.version="${IMAGE_TAG}" \
       org.opencontainers.image.variant="web=${INCLUDE_WEB},python=${INCLUDE_PYTHON}"
 
-# gosu for privilege drop; python3 only when the Python variant is requested.
-RUN apt-get update && apt-get install -y --no-install-recommends gosu ca-certificates \
+# gosu for privilege drop; nginx fronts the loopbound web UI for LAN access
+# (see docker/nginx.conf); python3 only when the Python variant is requested.
+RUN apt-get update && apt-get install -y --no-install-recommends gosu ca-certificates nginx \
     && rm -rf /var/lib/apt/lists/* \
     && if [ "$INCLUDE_PYTHON" = "true" ]; then \
            apt-get update && apt-get install -y --no-install-recommends python3 python3-venv \
@@ -126,6 +127,7 @@ ENV DSH_HOME=/app \
 RUN mkdir -p /app/.sessions /app/.storages && chown -R dsh:dsh /app
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY docker/nginx.conf /app/docker/nginx.conf
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # The entrypoint starts as root to chown mounted volumes, then execs gosu dsh.

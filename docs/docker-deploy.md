@@ -9,18 +9,23 @@ DeepSeek Harness ships a Docker image and a docker-compose orchestration for one
 | `Dockerfile` | Multi-stage build (base → builder → optional python-builder → runtime) |
 | `.dockerignore` | Build-context filter; excludes secrets and irrelevant artifacts |
 | `docker-compose.yml` | Orchestration: named volumes, env, ports, privilege drop |
-| `docker/entrypoint.sh` | Entrypoint: volume init + non-root drop + forward to built CLI |
+| `docker/entrypoint.sh` | Entrypoint: volume init + nginx start + non-root drop + forward to built CLI |
+| `docker/nginx.conf` | nginx reverse proxy template: LAN allowlist + WebSocket/SSE passthrough |
 | `.env.example` | Environment template (placeholders, no real secrets) |
 
 ## Quick start
 
-Boots the Web UI (`web` profile) by default, listening on `http://localhost:3080`:
+Boots the Web UI (`web` profile) by default. The web app binds `127.0.0.1` (it rejects `--host 0.0.0.0` for RCE safety); an in-container nginx reverse proxy binds `0.0.0.0:3080`, restricts clients to `DSH_ALLOW_CIDR` (default `192.168.0.0/24`), and proxies to the loopback backend. Docker maps host port 3080 to nginx:
 
 ```sh
 cp .env.example .env          # fill in DEEPSEEK_API_KEY
 docker compose up --build     # build and start the Web UI
 docker compose down           # stop, keep volume data
 ```
+
+The UI is reachable at `http://<host-ip>:3080` from any machine in the allowed CIDR.
+
+> To restrict access to a different LAN, set `DSH_ALLOW_CIDR=10.0.0.0/8` (or your CIDR) in `.env`. To disable nginx and expose loopback-only on the host, set `DSH_ALLOW_CIDR=` (empty) and switch `docker-compose.yml` to `network_mode: host`.
 
 ## Build variants
 
@@ -66,11 +71,10 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | `DEEPSEEK_API_KEY` | yes | DeepSeek API key; inject at runtime, never bake into the image |
 | `DEEPSEEK_BASE_URL` | no | API endpoint override (self-hosted gateway) |
 | `DSH_PROFILE` | no | Profile name to boot (equiv. `--profile <name>`), default `web` |
-| `DSH_WEB_HOST` | no | Web UI listen host (equiv. `--host`), default `0.0.0.0` |
-| `DSH_WEB_PORT` | no | Web UI listen port (equiv. `--port`), default `3080` |
+| `DSH_WEB_PORT` | no | External port nginx listens on (mapped 1:1 to host), default `3080` |
+| `DSH_ALLOW_CIDR` | no | CIDR allowed through nginx (empty disables nginx; use `network_mode: host`), default `192.168.0.0/24` |
 | `DSH_SESSIONS_DIR` | no | Sessions dir, default `/app/.sessions` |
 | `DSH_STORAGES_DIR` | no | Storages dir, default `/app/.storages` |
-| `WEB_PORT` | no | Web UI host port (compose mapping), default `3080` |
 
 ## Volumes
 
@@ -84,6 +88,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 ## Security constraints
 
 - The runtime process runs as non-root user `dsh` (UID 1001); the entrypoint starts as root to chown volumes, then drops privileges via `gosu`.
+- The web app binds `127.0.0.1` only; it rejects `--host 0.0.0.0` to avoid exposing remote code execution to the network. nginx fronts it with a CIDR allowlist (`allow`/`deny`).
 - `privileged: true` is forbidden; mounting the host Docker socket is forbidden.
 - `DEEPSEEK_API_KEY` is injected at runtime only (`-e` or `env_file`); no image layer contains the secret.
 - `.dockerignore` excludes `.env`, `.git/`, `node_modules/`, `.sessions/`, etc.

@@ -7,6 +7,12 @@
 # Copy .env.example to .env and fill in DEEPSEEK_API_KEY before starting.
 # The service runs as root (user: "0") so the entrypoint can chown the named
 # volumes, then drops privileges to the unprivileged dsh user (UID 1001).
+#
+# The web app intentionally rejects --host 0.0.0.0 (RCE exposure), so it binds
+# 127.0.0.1. An in-container nginx reverse proxy binds 0.0.0.0 and proxies to
+# the loopback backend, restricting clients to DSH_ALLOW_CIDR (default
+# 192.168.0.0/24). Docker maps the host port to nginx. Set DSH_ALLOW_CIDR empty
+# to skip nginx and fall back to network_mode: host (loopback-only access).
 
 services:
   dsh:
@@ -25,6 +31,8 @@ services:
     # to the dsh user via gosu. Change to "1001" only if volumes are pre-chowned.
     user: "0"
     restart: unless-stopped
+    ports:
+      - "${DSH_WEB_PORT:-3080}:${DSH_WEB_PORT:-3080}"
     env_file:
       - .env
     environment:
@@ -33,15 +41,16 @@ services:
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-}
       # Profile to boot when no command is given (see: dsh --profile <name>).
       DSH_PROFILE: ${DSH_PROFILE:-web}
-      # Listen on all interfaces so the UI is reachable outside the container.
-      DSH_WEB_HOST: ${DSH_WEB_HOST:-0.0.0.0}
+      # External port nginx listens on (mapped 1:1 to the host).
+      DSH_WEB_PORT: ${DSH_WEB_PORT:-3080}
+      # CIDR allowed to reach the Web UI via nginx (empty = no proxy; use
+      # network_mode: host instead for loopback-only host access).
+      DSH_ALLOW_CIDR: ${DSH_ALLOW_CIDR:-192.168.0.0/24}
     volumes:
       - dsh-sessions:/app/.sessions
       - dsh-storages:/app/.storages
       # Optional: mount a prepared profile dir under $DSH_HOME/profiles/<name>.
       # - ./profiles:/app/profiles:ro
-    ports:
-      - "${WEB_PORT:-3080}:3080"
     # Security: never enable privileged or mount the Docker socket.
     privileged: false
     # read_only: true would break volume writes; left as default.

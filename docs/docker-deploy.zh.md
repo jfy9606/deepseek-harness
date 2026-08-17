@@ -9,18 +9,23 @@ DeepSeek Harness 提供 Docker 镜像与 docker-compose 编排，支持一键构
 | `Dockerfile` | 多阶段镜像构建（base → builder → 可选 python-builder → runtime） |
 | `.dockerignore` | 构建上下文过滤，排除敏感文件与无关产物 |
 | `docker-compose.yml` | 服务编排：命名卷、环境变量、端口、降权 |
-| `docker/entrypoint.sh` | 入口脚本：卷初始化 + 非 root 降权 + 转发构建产物 |
+| `docker/entrypoint.sh` | 入口脚本：卷初始化 + nginx 启动 + 非 root 降权 + 转发构建产物 |
+| `docker/nginx.conf` | nginx 反向代理模板：局域网白名单 + WebSocket/SSE 透传 |
 | `.env.example` | 环境变量模板（占位，不含密钥） |
 
 ## 快速开始
 
-默认启动 Web UI（`web` profile），监听 `http://localhost:3080`：
+默认启动 Web UI（`web` profile）。Web app 绑定 `127.0.0.1`（出于安全拒绝 `--host 0.0.0.0`）；容器内 nginx 反向代理绑定 `0.0.0.0:3080`，通过 `DSH_ALLOW_CIDR`（默认 `192.168.0.0/24`）限制客户端，并代理到回环后端。Docker 将宿主机 3080 端口映射到 nginx：
 
 ```sh
 cp .env.example .env          # 填入 DEEPSEEK_API_KEY
 docker compose up --build     # 构建并启动 Web UI
 docker compose down           # 停止并保留卷数据
 ```
+
+允许 CIDR 内任意机器通过 `http://<宿主机IP>:3080` 访问 UI。
+
+> 如需限制为其他局域网，在 `.env` 中设置 `DSH_ALLOW_CIDR=10.0.0.0/8`（或你的 CIDR）。如需禁用 nginx、仅允许宿主机回环访问，设置 `DSH_ALLOW_CIDR=`（留空）并将 `docker-compose.yml` 改为 `network_mode: host`。
 
 ## 构建变体
 
@@ -66,11 +71,10 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 | `DEEPSEEK_API_KEY` | 是 | DeepSeek API 密钥，运行时注入，禁止烘焙进镜像 |
 | `DEEPSEEK_BASE_URL` | 否 | API 端点覆盖（自建网关） |
 | `DSH_PROFILE` | 否 | 启动 profile 名（等价 `--profile <name>`），默认 `web` |
-| `DSH_WEB_HOST` | 否 | Web UI 监听地址（等价 `--host`），默认 `0.0.0.0` |
-| `DSH_WEB_PORT` | 否 | Web UI 监听端口（等价 `--port`），默认 `3080` |
+| `DSH_WEB_PORT` | 否 | nginx 监听的外部端口（与宿主机 1:1 映射），默认 `3080` |
+| `DSH_ALLOW_CIDR` | 否 | 允许通过 nginx 的 CIDR（留空禁用 nginx；改用 `network_mode: host`），默认 `192.168.0.0/24` |
 | `DSH_SESSIONS_DIR` | 否 | 会话目录，默认 `/app/.sessions` |
 | `DSH_STORAGES_DIR` | 否 | 存储目录，默认 `/app/.storages` |
-| `WEB_PORT` | 否 | Web UI 宿主端口（compose 映射），默认 `3080` |
 
 ## 卷挂载
 
@@ -84,6 +88,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 ## 安全约束
 
 - 运行时进程以非 root 用户 `dsh`（UID 1001）运行；入口脚本以 root 初始化卷属权后通过 `gosu` 降权。
+- Web app 仅绑定 `127.0.0.1`；拒绝 `--host 0.0.0.0` 以避免将远程代码执行暴露到网络。nginx 通过 CIDR 白名单（`allow`/`deny`）前置代理。
 - 禁止 `privileged: true`，禁止挂载宿主机 Docker Socket。
 - `DEEPSEEK_API_KEY` 仅运行时注入（`-e` 或 `env_file`），镜像层不含密钥明文。
 - `.dockerignore` 排除 `.env`、`.git/`、`node_modules/`、`.sessions/` 等敏感与无关路径。
