@@ -91,6 +91,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 
 - The runtime process runs as non-root user `dsh` (UID 1001); the entrypoint starts as root to chown volumes, then drops privileges via `gosu`.
 - The web app binds `127.0.0.1` only; it rejects `--host 0.0.0.0` to avoid exposing remote code execution to the network. nginx fronts it with a CIDR allowlist (`allow`/`deny`).
+- nginx rewrites the `Host` and `Origin` headers to the loopback backend so the app's browser-trust fence accepts proxied requests. nginx's CIDR allowlist is the real access-control layer; the app trusts the proxy for pre-authorized traffic.
 - `privileged: true` is forbidden; mounting the host Docker socket is forbidden.
 - `DEEPSEEK_API_KEY` is injected at runtime only (`-e` or `env_file`); no image layer contains the secret.
 - `.dockerignore` excludes `.env`, `.git/`, `node_modules/`, `.sessions/`, etc.

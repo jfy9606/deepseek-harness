@@ -91,6 +91,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t dsh:dev .
 
 - 运行时进程以非 root 用户 `dsh`（UID 1001）运行；入口脚本以 root 初始化卷属权后通过 `gosu` 降权。
 - Web app 仅绑定 `127.0.0.1`；拒绝 `--host 0.0.0.0` 以避免将远程代码执行暴露到网络。nginx 通过 CIDR 白名单（`allow`/`deny`）前置代理。
+- nginx 将 `Host` 和 `Origin` 头重写为回环后端地址，使应用的浏览器信任围栏接受代理请求。nginx 的 CIDR 白名单是真正的访问控制层；应用信任代理转发的预授权流量。
 - 禁止 `privileged: true`，禁止挂载宿主机 Docker Socket。
 - `DEEPSEEK_API_KEY` 仅运行时注入（`-e` 或 `env_file`），镜像层不含密钥明文。
 - `.dockerignore` 排除 `.env`、`.git/`、`node_modules/`、`.sessions/` 等敏感与无关路径。
