@@ -22,6 +22,11 @@ interface TypertPlugin {
 
 const DECORATOR_SYNTAX = /^\s*@[A-Za-z_$][\w$]*/m
 
+// Full builds and typecheck own TypeScript diagnostics. Benchmark-only emission
+// defers them to the required full-build CI jobs; Typert generates reflection
+// without repeating those diagnostics.
+const TSC_OWNED_DIAGNOSTICS = { checkDiagnostics: false } as const
+
 /** Generation scope selected by a tsdown build phase. */
 export interface TypertPluginOptions {
   /** Package mode emits only the package being bundled; workspace mode emits every explicit contributor once. */
@@ -78,7 +83,7 @@ export function typertPlugin(pluginOptions: TypertPluginOptions = {}): TypertPlu
       if (manifest.name === undefined || !hasTypertExport(manifest.exports)) return
       let artifacts = artifactsByRoot.get(root)
       if (artifacts === undefined) {
-        const generator = new WorkspaceTypertGenerator(root)
+        const generator = new WorkspaceTypertGenerator(root, TSC_OWNED_DIAGNOSTICS)
         artifacts = pluginOptions.faces === undefined
           ? generator.generate()
           : generator.generate(undefined, pluginOptions.faces)
@@ -89,7 +94,7 @@ export function typertPlugin(pluginOptions: TypertPluginOptions = {}): TypertPlu
   }
 
   function emitWorkspace(root: string, faces: readonly TypertFace[] | undefined): void {
-    const generator = new WorkspaceTypertGenerator(root)
+    const generator = new WorkspaceTypertGenerator(root, TSC_OWNED_DIAGNOSTICS)
     const packages = generator.discover(faces)
       .filter(candidate => hasTypertExport(readManifest(join(root, candidate.root)).exports))
       .map(candidate => candidate.package)
